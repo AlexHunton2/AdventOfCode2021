@@ -1,4 +1,7 @@
+#WARNING: BAD CODE
 heightmap = []
+
+MAX_HEIGHT = 9
 
 #Read File
 try:
@@ -20,7 +23,7 @@ finally:
 MAX_ROW = len(heightmap)
 MAX_COL = len(heightmap[0])
 
-lowest_points = []
+lowest_points = {}
 
 for row in range(0, MAX_ROW):
     for col in range(0, MAX_COL):
@@ -57,14 +60,61 @@ for row in range(0, MAX_ROW):
         if (spot not in temp):
             temp.append(spot)
             if min(temp) == spot:
-                lowest_points.append(spot)
+                lowest_points[(row, col)] = spot
 
-# calculate risk_level
-risk_levels = [i + 1 for i in lowest_points]
-print(sum(risk_levels))
+basins = []
 
+def constructBasinPart(i_row = int, i_col = int):
+    temp = {}
+    temp[(i_row, i_col)] = heightmap[i_row][i_col]
 
+    for i in range(0, 4):
+        try:
+            if (i == 0):
+                if (heightmap[i_row+1][i_col] != MAX_HEIGHT):
+                   temp[(i_row+1, i_col)] = heightmap[i_row+1][i_col]
+            if (i == 1):
+                if (heightmap[i_row-1][i_col] != MAX_HEIGHT):
+                    temp[(i_row-1, i_col)] = heightmap[i_row-1][i_col] 
+            if (i == 2):
+                if (heightmap[i_row][i_col+1] != MAX_HEIGHT):
+                    temp[(i_row, i_col+1)] = heightmap[i_row][i_col+1]
+            if (i == 3):
+                if (heightmap[i_row][i_col-1] != MAX_HEIGHT):
+                    temp[(i_row, i_col-1)] = heightmap[i_row][i_col-1]
+        except:
+            continue
+    
+    return temp
 
+for key,height in lowest_points.items():
+    prev_parts = {(key[0], key[1]) : height}
+    parts = constructBasinPart(key[0], key[1])
+    
+    while True:
+        temp = parts
+        for key,height in parts.items():
+            if (key not in prev_parts):
+                parts = parts | constructBasinPart(key[0], key[1])
+        prev_parts = temp
 
+        if (len(prev_parts) == len(parts)):
+            break
+    
+    temp = parts.copy()
+    for key,height in parts.items():
+        if (key[0] < 0 or key[1] < 0):
+            temp.pop(key)
+    
+    basins.append(temp)
 
+result = 1
+lengths = []
+basin_lengths = [len(j) for j in basins]
+copy_basin_lengths = basin_lengths.copy()
+for i in range(0, 3):
+    result *= max(copy_basin_lengths)
+    lengths.append(max(copy_basin_lengths))
+    copy_basin_lengths.remove(max(copy_basin_lengths))
 
+print(result)
